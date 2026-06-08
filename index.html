@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Altinha Brasil</title>
+<style>
+html,body{margin:0;padding:0;overflow:hidden;font-family:Arial;background:#111}
+#ui{
+position:fixed;top:10px;left:10px;color:#fff;z-index:10
+}
+canvas{display:block}
+button{margin-top:5px;padding:6px;border:0;border-radius:6px}
+</style>
+</head>
+<body>
+<div id="ui">
+<div><b>Altinha Brasil</b></div>
+<div>Pontos: <span id="score">0</span></div>
+<div>Recorde: <span id="best">0</span></div>
+<div>Combo: <span id="combo">0</span></div>
+<button onclick="resetGame()">Reiniciar</button>
+<button onclick="togglePause()">Pausar</button>
+</div>
+<canvas id="c"></canvas>
+<script>
+const c=document.getElementById('c');
+const ctx=c.getContext('2d');
+c.width=innerWidth;c.height=innerHeight;
+
+let score=0;
+let combo=0;
+let best=localStorage.getItem('best')||0;
+document.getElementById('best').innerText=best;
+
+let pause=false;
+
+const player={x:c.width/2,y:c.height-80,w:120,h:20,speed:10};
+const ball={x:c.width/2,y:200,vx:3,vy:2,r:12};
+let gravity=0.35;
+
+function resetGame(){
+score=0;combo=0;
+ball.x=c.width/2;ball.y=200;ball.vx=3;ball.vy=2;
+}
+
+function togglePause(){pause=!pause}
+
+window.addEventListener('mousemove',e=>{player.x=e.clientX});
+window.addEventListener('touchmove',e=>{player.x=e.touches[0].clientX});
+
+function update(){
+if(pause) return;
+
+ball.vy+=gravity;
+ball.x+=ball.vx;
+ball.y+=ball.vy;
+
+if(ball.x<0||ball.x>c.width) ball.vx*=-1;
+
+// colisão
+if(ball.y+ball.r>player.y && ball.x>player.x-60 && ball.x<player.x+60 && ball.vy>0){
+ball.vy=-9;
+score++;combo++;
+
+gravity+=0.0005;
+
+if(combo%10===0){ball.vx*=1.1;ball.vy-=1;}
+
+if(score>best){best=score;localStorage.setItem('best',best)}
+
+document.getElementById('score').innerText=score;
+document.getElementById('combo').innerText=combo;
+document.getElementById('best').innerText=best;
+}
+
+if(ball.y>c.height){resetGame();}
+}
+
+function draw(){
+ctx.fillStyle="#0b0b0b";
+ctx.fillRect(0,0,c.width,c.height);
+
+// bola
+ctx.fillStyle="yellow";
+ctx.beginPath();
+ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+ctx.fill();
+
+// jogador
+ctx.fillStyle="#00ff88";
+ctx.fillRect(player.x-60,player.y,120,20);
+
+// sombra
+ctx.fillStyle="rgba(0,0,0,0.3)";
+ctx.beginPath();
+ctx.ellipse(ball.x,player.y+25,ball.r*1.5,6,0,0,Math.PI*2);
+ctx.fill();
+}
+
+function loop(){
+update();
+draw();
+requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
